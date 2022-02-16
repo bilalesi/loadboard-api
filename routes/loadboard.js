@@ -1,7 +1,7 @@
 const express = require("express");
 const { route } = require("express/lib/application");
 const router = express.Router();
-const Loadboard = require("../models/Loadboard")
+const Loadboard = require("../models/loadboard")
 
 
 router.post("/", async function (req, res) {
