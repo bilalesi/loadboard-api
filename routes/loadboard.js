@@ -80,6 +80,27 @@ router.get("/getloads", async function (req, res) {
             }
 
         }
+        //filter by domain used
+        if (req.query.domain !== undefined) {
+            var biddomain = req.query.domain;
+
+            if ( biddomain )
+            {
+                query["domain"] = biddomain;
+            }
+
+        }
+        
+        //filter by user account used
+        if (req.query.account !== undefined) {
+            var usernameUsed = req.query.account;
+
+            if ( usernameUsed )
+            {
+                query["account"] = usernameUsed;
+            }
+
+        }
         // filter for date
         /* if (req.query.pickupDate !== undefined) {
             var PickupDate = req.query.pickupDate;

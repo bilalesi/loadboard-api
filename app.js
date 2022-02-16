@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 app.use(bodyParser.json({ limit: "10mb" }));
 app.set("socketio",io);
 
-var db = mongoose.connect("mongodb+srv://loadboard-api:PZERz9cVltSplG5F@americanspecializedapid.nrkzp.mongodb.net/Integrations?retryWrites=true&w=majority",
+var db = mongoose.connect("mongodb+srv://loadboard-api:ol3nU0xJrdC7t7Jx@americanspecializedapid.nrkzp.mongodb.net/Integrations?retryWrites=true&w=majority",
     () => { console.log("connected") }, (e) => { console.log("failed to connect") });
 
 
