@@ -14,5 +14,6 @@ const LoadboardSchema = mongoose.Schema({
   }
   
 });
+const mgloads = mongoose.connection.useDb('Integrations');
 
-module.exports = mongoose.model("Loadboard", LoadboardSchema, "MercuryGate");
+module.exports = mgloads.model("Loadboard", LoadboardSchema, "MercuryGate");

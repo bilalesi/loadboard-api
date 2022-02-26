@@ -1,9 +1,8 @@
 const cors = require("cors");
 const path = require("path");
 const express = require("express");
-const mongoose = require("mongoose")
-const http = require("http")
-
+const http = require("http");
+const mongoose = require("mongoose");
 
 const apiLoadboardController=require('./routes/loadboard')
 //const userController=require('./controller/user')
@@ -20,7 +19,7 @@ app.use(bodyParser.json({ limit: "10mb" }));
 app.set("socketio",io);
 
 var db = mongoose.connect("mongodb+srv://loadboard-api:ol3nU0xJrdC7t7Jx@americanspecializedapid.nrkzp.mongodb.net/Integrations?retryWrites=true&w=majority",
-    () => { console.log("connected") }, (e) => { console.log("failed to connect") });
+  () => { console.log("connected") }, (e) => { console.log("failed to connect") });
 
 
 //route based on path
@@ -41,8 +40,11 @@ app.get('/', (req, res) => {
       <ul>
         <li><span style="color:green;font-weight:bold;">Operand Greater than (>)</span> or <span style="color:green;font-weight:bold;">Less than (<)</span> is available as the first character for filtering this content.</li>
         <li><span style="font-style:italic;">If no operand is used it does an equals search.</span></li>
+        <li><h4>Sorting</h4></li>
+        <ul>  
+          <li><span style="">&sort=id,asc;bidboard,desc;created,desc</span></li>
+        </ul>
       </ul>
-      <li>/activebidboardloads</li>
     </ul>
     <h3>Single Load:</h3>
     <ul>

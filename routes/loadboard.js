@@ -1,8 +1,9 @@
 const express = require("express");
 const { route } = require("express/lib/application");
+const { Mongoose } = require("mongoose");
 const router = express.Router();
-const Loadboard = require("../models/loadboard")
-
+const Loadboard = require("../models/loadboard");
+const Reports = require("../models/reports");
 
 router.post("/", async function (req, res) {
     let data = req.body;
@@ -38,14 +39,48 @@ router.get("/getload", async function (req, res) {
 // reports
 router.get("/getloads", async function (req, res) {
     try {
+        var limit = 400;
         var response = {};
         var errors = [];
         var query = {};
         var sort = {}
         //aggregation specific below
         var addFields = {};
+        
+        var get = (t, s) =>
+            s.split(".").reduce((r, k) => r?.[k], t);
+
+        if ( req.query.report !== undefined )
+        {
+            var report = req.query.report;
+
+            if (report == null||report == "") {
+                errors.push({ message: "Report query *requires* a string." });
+            }
+            
+            //
+            //  Report functions as a **default** query store,
+            //  if there is a existing query in the url this
+            //  will not replace it.
+            //
+            const reportData = await Reports.findOne({"name":report}, { _id: 0 }, {lean: true}).sort({_id:-1}).then((reportdata, err) => {
+                return new Promise((resolve, reject) => {
+                    var queries = reportdata.table.query;
+                    for(let queryKey in queries){
+                        let query = queries[queryKey];
+                        if ( !req.query[queryKey] )
+                            req.query[queryKey] = query;
+                    }
+                    resolve(reportdata);
+                });
+            }).then((reportdta, err) => {
+                response.reports = [reportdta];
+            });
+
+        }
+
         // filter
-        if (req.query.stops !== undefined) {
+        if (req.query.stops !== undefined ) {
             var stops = req.query.stops;
             var number = !parseInt(req.query.stops.split(/\>|\</)[1]) ? (!parseInt(req.query.stops.split(/\>|\</)[0]) ? null : parseInt(req.query.stops.split(/\>|\</)[0])) : parseInt(req.query.stops.split(/\>|\</)[1]);
             if (number == null) {
@@ -105,8 +140,8 @@ router.get("/getloads", async function (req, res) {
         /* if (req.query.pickupDate !== undefined) {
             var PickupDate = req.query.pickupDate;
 
-            switch( isbidboard ){
-                case "true":
+            switch( PickupDate ){
+                case PickupDate.indexOf('>') > -1:
                     query["data.bidData.isBidActive"] = true;
                 break;
                 case "false":
@@ -187,11 +222,54 @@ router.get("/getloads", async function (req, res) {
 
         // Handle standard errors
         if (errors.length == 0) {
+            //
             if ( !switchQuery ){
-                const loads = await Loadboard.find(query, { _id: 0 }).sort(sort);
-                response.data = loads;
+                const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then(documents => {
+                    if ( response.reports )
+                    {
+                        //console.log(response.reports);
+                        
+                        //debugger;
+                        const tableDocument = documents.map( (doc, index) => {
+                            //columns
+                            var rows = [];
+                            response.reports[0].table.col.forEach(a => {
+                                //console.log(a);
+                                var accessor = a.accessor;
+                                var path = a.path;
+                                var data = null;
+                                try{
+                                    data = eval(path);
+                                    data == undefined ? data = null : data;
+                                } catch{
+                                    data = null;
+                                    //debugger;
+                                }
+                                
+                                // 
+                                //debugger;
+                                //return
+                                rows = {...rows ,[accessor]: data};
+                            });
+                            //console.log(rows);
+                            //debugger;
+                            return rows;
+                        });
+                        //console.log(tableDocument);
+                        //debugger;
+                        response.data = tableDocument;
+                        response['length'] = tableDocument.length;
+                    }
+                    else{
+                        response.data = documents;
+                        response['length'] = response.data.length;
+                    }
+
+                });
                 response.query = { query, 'sort': sort };
-                response['length'] = loads.length;
+                response.limit = limit;
+                //debugger;
+                
 
                 return res.json(response);
             }
@@ -206,11 +284,12 @@ router.get("/getloads", async function (req, res) {
                     {
                         $sort: sort
                     }
-                ]);
+                ]).limit(limit);
 
                 response.data = loads;
                 response.query = { 'type': 'aggregate', query, 'sort': sort };
                 response['length'] = loads.length;
+                response.limit = limit;
 
                 return res.json(response);
             }
