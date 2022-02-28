@@ -46,13 +46,10 @@ router.get("/getloads", async function (req, res) {
         var sort = {}
         //aggregation specific below
         var addFields = {};
-        
-        var get = (t, s) =>
-            s.split(".").reduce((r, k) => r?.[k], t);
 
         if ( req.query.report !== undefined )
         {
-            var report = req.query.report;
+            const report = req.query.report;
 
             if (report == null||report == "") {
                 errors.push({ message: "Report query *requires* a string." });
@@ -63,15 +60,16 @@ router.get("/getloads", async function (req, res) {
             //  if there is a existing query in the url this
             //  will not replace it.
             //
-            const reportData = await Reports.findOne({"name":report}, { _id: 0 }, {lean: true}).sort({_id:-1}).then((reportdata, err) => {
+            await Reports.find({"name":report}, { }, {lean: true}).then((reportdata, err) => {
+                //debugger;
                 return new Promise((resolve, reject) => {
-                    var queries = reportdata.table.query;
+                    var queries = reportdata[0].table.query;
                     for(let queryKey in queries){
                         let query = queries[queryKey];
                         if ( !req.query[queryKey] )
                             req.query[queryKey] = query;
                     }
-                    resolve(reportdata);
+                    resolve(reportdata[0]);
                 });
             }).then((reportdta, err) => {
                 response.reports = [reportdta];
@@ -240,14 +238,16 @@ router.get("/getloads", async function (req, res) {
                                 var data = null;
                                 try{
                                     data = eval(path);
+                                    if ( typeof(data) == 'boolean' )
+                                    {
+                                        data = data.toString();
+                                    }
                                     data == undefined ? data = null : data;
                                 } catch{
                                     data = null;
                                     //debugger;
                                 }
-                                
                                 // 
-                                //debugger;
                                 //return
                                 rows = {...rows ,[accessor]: data};
                             });
