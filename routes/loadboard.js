@@ -183,7 +183,7 @@ router.get("/getloads", async function (req, res) {
                     case 'created':
                         sort["date.created"] = sortOperand;
                     break;
-                    case 'id':
+                    case 'id': case '_id':
                         sort["_id"] = sortOperand;
                     break;
                     case 'oid':
@@ -238,10 +238,10 @@ router.get("/getloads", async function (req, res) {
                                 var data = null;
                                 try{
                                     data = eval(path);
-                                    if ( typeof(data) == 'boolean' )
+                                    /* if ( typeof(data) == 'boolean' )
                                     {
                                         data = data.toString();
-                                    }
+                                    } */
                                     data == undefined ? data = null : data;
                                 } catch{
                                     data = null;
