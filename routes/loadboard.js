@@ -237,7 +237,19 @@ router.get("/getloads", async function (req, res) {
                                 var path = a.path;
                                 var data = null;
                                 try{
-                                    data = eval(path);
+                                    //debugger;
+                                    if ( typeof(path) === "object" )
+                                    {
+                                        data = [];
+                                        for (let x = 0; x < path.length; x++) {
+                                            const element = path[x];
+                                            data.push( eval(element) );
+                                            //debugger;
+                                        }
+                                    }
+                                    else{
+                                        data = eval(path);
+                                    }
                                     /* if ( typeof(data) == 'boolean' )
                                     {
                                         data = data.toString();
