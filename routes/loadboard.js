@@ -60,7 +60,7 @@ router.get("/getloads", async function (req, res) {
             //  if there is a existing query in the url this
             //  will not replace it.
             //
-            await Reports.find({"name":report}, { }, {lean: true}).then((reportdata, err) => {
+            await Reports.find({"name":{ $eq: report }}, { }, {lean: true}).then((reportdata, err) => {
                 //debugger;
                 return new Promise((resolve, reject) => {
                     var queries = reportdata[0].table.query;
@@ -195,8 +195,9 @@ router.get("/getloads", async function (req, res) {
                     case 'bidboard':
                         sort["data.bidData.isBidActive"] = sortOperand;
                     break;
+                    //not sorting correctly
                     case 'pickupdate':
-                        sort["data.bidData.Plan[0].PlannedDate.Begin"] = sortOperand;
+                        sort["data.bidData.Plan.PlannedDate.Begin"] = sortOperand;
                     break;
                     case 'stops':
                         addFields['stopsLength'] = {
