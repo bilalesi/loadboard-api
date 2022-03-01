@@ -47,7 +47,7 @@ router.get("/getloads", async function (req, res) {
         //aggregation specific below
         var addFields = {};
 
-        if ( req.query.report !== undefined )
+        if ( req.query.report !== undefined || req.query.report !== "null" )
         {
             const report = req.query.report;
 
