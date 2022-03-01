@@ -195,6 +195,9 @@ router.get("/getloads", async function (req, res) {
                     case 'bidboard':
                         sort["data.bidData.isBidActive"] = sortOperand;
                     break;
+                    case 'pickupdate':
+                        sort["data.bidData.Plan[0].PlannedDate.Begin"] = sortOperand;
+                    break;
                     case 'stops':
                         addFields['stopsLength'] = {
                             '$size': "$data.bidData.Plan"
