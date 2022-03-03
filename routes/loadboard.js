@@ -39,7 +39,7 @@ router.get("/getload", async function (req, res) {
 // reports
 router.get("/getloads", async function (req, res) {
     try {
-        var limit = 400;
+        var limit = 80;
         var response = {};
         var errors = [];
         var query = {};
