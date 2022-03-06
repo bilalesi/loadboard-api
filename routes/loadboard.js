@@ -39,15 +39,15 @@ router.get("/getload", async function (req, res) {
 // reports
 router.get("/getloads", async function (req, res) {
     try {
-        var limit = 80;
         var response = {};
         var errors = [];
         var query = {};
         var sort = {}
+        var limit = req.query.limit !== undefined && parseInt(req.query.limit).toString() !== "NaN" ? parseInt(req.query.limit) : errors.push({ message: "Limit value malformed please use numbers only." }) && 80;
         //aggregation specific below
         var addFields = {};
 
-        if ( req.query.report !== undefined && req.query.report !== "null" )
+        if ( req.query.report !== undefined && req.query.report !== "null" && errors.length == 0 )
         {
             const report = req.query.report;
 
@@ -60,9 +60,15 @@ router.get("/getloads", async function (req, res) {
             //  if there is a existing query in the url this
             //  will not replace it.
             //
+            //debugger;
             await Reports.find({"name":{ $eq: report }}, { }, {lean: true}).then((reportdata, err) => {
                 //debugger;
                 return new Promise((resolve, reject) => {
+                    
+                    if ( reportdata.length < 1 )
+                    {
+                        reject('Report name invalid.');
+                    }
                     var queries = reportdata[0].table.query;
                     for(let queryKey in queries){
                         let query = queries[queryKey];
@@ -71,9 +77,11 @@ router.get("/getloads", async function (req, res) {
                     }
                     resolve(reportdata[0]);
                 });
-            }).then((reportdta, err) => {
-                response.reports = [reportdta];
-            });
+            }).then(function success(reportdta) {
+                    response.reports = [reportdta];
+                }, function error(err) {
+                    errors.push({ message: err });
+            }).catch(function(err) { console.log(err); });
 
         }
 
@@ -226,6 +234,7 @@ router.get("/getloads", async function (req, res) {
         if (errors.length == 0) {
             //
             if ( !switchQuery ){
+                //debugger;
                 const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then(documents => {
                     if ( response.reports )
                     {

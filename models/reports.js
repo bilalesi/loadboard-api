@@ -2,7 +2,10 @@ const mongoose = require("mongoose");
 
 const UIReports = mongoose.Schema({
    _id: mongoose.Schema.Types.ObjectId,
-   table: { type: Object },
+   table: { 
+      col: { type: Array },
+      query: { type: Object }
+    },
    name: { type: String }
   
 });
