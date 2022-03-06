@@ -43,7 +43,14 @@ router.get("/getloads", async function (req, res) {
         var errors = [];
         var query = {};
         var sort = {}
-        var limit = req.query.limit !== undefined && parseInt(req.query.limit).toString() !== "NaN" ? parseInt(req.query.limit) : errors.push({ message: "Limit value malformed please use numbers only." }) && 80;
+        var limit = 80;
+        if ( req.query.limit !== undefined && parseInt(req.query.limit).toString() !== "NaN" )
+        {
+            limit = parseInt(req.query.limit);
+        }
+        else if( req.query.limit !== undefined && parseInt(req.query.limit).toString() === "NaN" ){
+            errors.push({ message: "Limit value malformed please use numbers only." })
+        }
         //aggregation specific below
         var addFields = {};
 
