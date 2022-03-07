@@ -1,6 +1,5 @@
 const express = require("express");
 const { route } = require("express/lib/application");
-const { Mongoose } = require("mongoose");
 const router = express.Router();
 const Loadboard = require("../models/loadboard");
 const Reports = require("../models/reports");
