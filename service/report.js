@@ -1,6 +1,9 @@
 const Loadboard = require("../models/loadboard");
 const Reports = require("../models/reports");
 const { param } = require("../routes/loadboard");
+const nconf = require('nconf');
+const converter = require("../helper/converter");
+nconf.env();
 
 async function formatRequest(parameters,errors,response,addFields, switchQuery){
     var query = {},
@@ -37,6 +40,9 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
             });
         }).then(function success(reportdta) {
                 response.reports = [reportdta];
+                nconf.use('currentTable', { currentTable:{
+                    tableConfig: [reportdta]
+                }, type: 'literal'});
             }, function error(err) {
                 errors.push({ message: err });
         }).catch(function(err) { console.log(err); });
@@ -185,19 +191,20 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
         });
     }
     //debugger;
-    return [ query, sort, errors, response, addFields, switchQuery ];
+    return {
+        query: query,
+        sort: sort,
+        errors: errors,
+        response: response,
+        addFields: addFields,
+        switchQuery: switchQuery
+    };
 }
 
 module.exports = {
     init: async (parameters,socket,io,changeStreamFunc) => {
-        async function monitorStream(loadboardFunc){
-            const pipeline = [
-                {
-                    '$match': {
-                        '$or': [{ 'operationType': 'insert' },{ 'operationType': 'update' }]
-                    }
-                }
-            ];
+        socket.data.table = socket.data.table != undefined ? socket.data.table : [];
+        /*async function monitorStream(loadboardFunc){
             //
             //  need to stop this from duplicating and instead just start one when the first subscription starts
             //
@@ -208,15 +215,15 @@ module.exports = {
                 switch(next.operationType) {
                     case 'insert':
                         console.log('an insert happened...', "uni_ID: ", next.fullDocument);
-                        Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
+                        Loadboard.find(query, {}).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
                         break;
                     case 'update':
                         console.log('an update happened...');
-                        Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
+                        Loadboard.find(query, {}).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
                         break;
                     case 'delete':
                         console.log('a delete happened...');
-                        Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
+                        Loadboard.find(query, {}).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
                         break;
                     default:
                         break;
@@ -228,20 +235,20 @@ module.exports = {
                 return response;
             };
         
-            changeStream.off("change",monitor).on("change",monitor);
-        }
+            changeStream.on("change",monitor); 
+        }*/
         try{
             var response = {};
             var errors = [];
             var addFields = {};
             var switchQuery = false;
             var t = await formatRequest(parameters,errors,response,addFields,switchQuery);
-            var query = t[0];
-            var sort = t[1];
-            errors = t[2],
-            response = t[3],
-            addFields = t[4],
-            switchQuery = t[5];
+            var query = t.query;
+            var sort = t.sort;
+            errors = t.errors,
+            response = t.response,
+            addFields = t.addFields,
+            switchQuery = t.switchQuery;
             //
             //var query = {};
             //var sort = {}
@@ -257,70 +264,26 @@ module.exports = {
             // Handle standard errors
             if (errors.length == 0) {
                 //
+                //debugger;
+                socket.data.table.push( { currentTable:{
+                    query: query,
+                    limit: limit,
+                    sort: sort,
+                    parameters: parameters,
+                    switchQuery: switchQuery,
+                    reports: response.reports
+                }});
+
                 if ( !switchQuery ){
                     //debugger;
-                    const loadboardFunc = (documents) => {
-                        if ( response.reports )
-                        {
-                            //console.log(response.reports);
-                            
-                            //debugger;
-                            const tableDocument = documents.map( (doc, index) => {
-                                //columns
-                                var rows = [];
-                                response.reports[0].table.col.forEach(a => {
-                                    //console.log(a);
-                                    var accessor = a.accessor;
-                                    var path = a.path;
-                                    var data = null;
-                                    try{
-                                        //debugger;
-                                        if ( typeof(path) === "object" )
-                                        {
-                                            data = [];
-                                            for (let x = 0; x < path.length; x++) {
-                                                const element = path[x];
-                                                data.push( eval(element) );
-                                                //debugger;
-                                            }
-                                        }
-                                        else{
-                                            data = eval(path);
-                                        }
-                                        /* if ( typeof(data) == 'boolean' )
-                                        {
-                                            data = data.toString();
-                                        } */
-                                        data == undefined ? data = null : data;
-                                    } catch{
-                                        data = null;
-                                        //debugger;
-                                    }
-                                    // 
-                                    //return
-                                    rows = {...rows ,[accessor]: data};
-                                });
-                                //console.log(rows);
-                                //debugger;
-                                return rows;
-                            });
-                            //console.log(tableDocument);
-                            //debugger;
-                            response.data = tableDocument;
-                            response['length'] = tableDocument.length;
-                        }
-                        else{
-                            response.data = documents;
-                            response['length'] = response.data.length;
-                        }
+                    console.log(nconf.get());
 
-                    };
-                    const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( loadboardFunc );
+                    const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( (documents)=> {converter.loadboard({documents,response}).then((r) =>{response = r;})} );
 
                     response.query = { query, 'sort': sort };
                     response.limit = limit;
                     //debugger;
-                    monitorStream(loadboardFunc);
+                    //monitorStream(loadboardFunc);
                     return response;
                 }
                 else{
@@ -341,7 +304,7 @@ module.exports = {
                     response['length'] = loads.length;
                     response.limit = limit;
                     response.query = query;
-                    monitorStream();
+                    //monitorStream();
                     //debugger;
                     return response;
                 }
@@ -350,7 +313,7 @@ module.exports = {
                 response.errors = errors;
                 response.query = query;
                 //debugger;
-                monitorStream();
+                //monitorStream();
                 return response;
             }
         } catch (error){
