@@ -19,7 +19,7 @@ async function monitorStream(io){
     ];
     //debugger;
 
-    const changeStream = dashboard_update.watch({ fullDocument: 'updateLookup' },pipeline);
+    const dashboardChangeStream = dashboard_update.watch({ fullDocument: 'updateLookup' },pipeline);
 
     const monitor = async next => {
         console.log("Change happened: ", next);
@@ -34,7 +34,7 @@ async function monitorStream(io){
         tableConfig = nconf.get('currentTable:tableConfig'); */
 
         //debugger;
-        io.to('Dashboard').emit('table-update', {next});
+        io.to('Dashboard').emit('request-update', {next});
 
         // response.query = { query, 'sort': sort };
         //response.limit = limit;
@@ -43,7 +43,7 @@ async function monitorStream(io){
         return response;
     };
 
-    changeStream.on("change",monitor);
+    dashboardChangeStream.on("change",monitor);
     console.log('watching for changes');
 }
 module.exports = { monitor: monitorStream };

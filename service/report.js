@@ -202,7 +202,7 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
 }
 
 module.exports = {
-    init: async (parameters,socket,io,changeStreamFunc) => {
+    init: async (parameters,socket,io) => {
         socket.data.table = socket.data.table != undefined ? socket.data.table : [];
         /*async function monitorStream(loadboardFunc){
             //
@@ -320,5 +320,75 @@ module.exports = {
             console.log(error);
         }
 
+    },
+    update: async (parameters,socket,io) => {
+        //socket.data.table = socket.data.table != undefined ? socket.data.table : [];
+        try{
+            var response = {};
+            var errors = [];
+            var addFields = {};
+            var switchQuery = false;
+            var t = await formatRequest(parameters,errors,response,addFields,switchQuery);
+            var query = t.query;
+            var sort = t.sort;
+            errors = t.errors,
+            response = t.response,
+            addFields = t.addFields,
+            switchQuery = t.switchQuery;
+
+            var limit = 80;
+            if ( parameters.limit !== undefined && parseInt(parameters.limit).toString() !== "NaN" )
+            {
+                limit = parseInt(parameters.limit);
+            }
+            else if( parameters.limit !== undefined && parseInt(parameters.limit).toString() === "NaN" ){
+                errors.push({ message: "Limit value malformed please use numbers only." })
+            }
+
+            // Handle standard errors
+            if (errors.length == 0) {
+
+                if ( !switchQuery ){
+                    //debugger;
+                    console.log(nconf.get());
+
+                    const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( (documents)=> {converter.loadboard({documents,response}).then((r) =>{response = r;})} );
+
+                    response.query = { query, 'sort': sort };
+                    response.limit = limit;
+                    //debugger;
+                    return response;
+                }
+                else{
+                    const loads = await Loadboard.aggregate([
+                        {
+                            $match: query
+                        },
+                        {
+                            $addFields: addFields
+                        },
+                        {
+                            $sort: sort
+                        }
+                    ]).limit(limit);
+
+                    response.data = loads;
+                    response.query = { 'type': 'aggregate', query, 'sort': sort };
+                    response['length'] = loads.length;
+                    response.limit = limit;
+                    response.query = query;
+                    //debugger;
+                    return response;
+                }
+            }
+            else {
+                response.errors = errors;
+                response.query = query;
+                //debugger;
+                return response;
+            }
+        } catch (error){
+            console.log(error);
+        }
     }
 }

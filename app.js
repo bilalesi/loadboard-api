@@ -58,11 +58,18 @@ io.on("connection", (socket) => {
     socket.join(data.report);
     console.log(data);
 
+    socket.on('table-update',async (p)=>{
+      reportData.update(data,socket,io).then( (result) => {
+        socket.emit("table-update", result);
+        console.log('updated table data',result);
+      });
+    });
+
     reportData.init(data,socket,io).then( (result) => {
       socket.emit("initialize", result);
       console.log('sent table data');
       //debugger;
-    } );
+    });
     
   });
   socket.on('unsubscribeFeed',(data)=>{
