@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
+let mongoose = require("mongoose");
 
-const LoadboardSchema = mongoose.Schema({
+let LoadboardSchema = mongoose.Schema({
    _id: mongoose.Schema.Types.ObjectId,
   oid: { type: Number, unique: true },
   data: { type: Object, required: true },
@@ -14,6 +14,6 @@ const LoadboardSchema = mongoose.Schema({
   }
   
 });
-const mgloads = mongoose.connection.useDb('Integrations');
+let mgloads = mongoose.connection.useDb('Integrations');
 
 module.exports = mgloads.model("Loadboard", LoadboardSchema, "MercuryGate");

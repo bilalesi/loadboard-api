@@ -9,6 +9,6 @@ const UIReports = mongoose.Schema({
    name: { type: String }
   
 });
-const uidb = mongoose.connection.useDb('UI');
+const uiDB = mongoose.connection.useDb('UI');
 
-module.exports = uidb.model("UI", UIReports, "Reports");
+module.exports = uiDB.model("UI", UIReports, "Reports");

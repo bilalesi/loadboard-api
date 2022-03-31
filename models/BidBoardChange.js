@@ -5,9 +5,9 @@ let SocketIOdbSchema = mongoose.Schema({
   created: { type: Date },
   action: { type: String },
   reason: { type: String },
-  loadsChanged: { type: Number },
-  newLoads: { type: Array }
+  newLoads: { type: String },
+  loadsChanged: { type: Number }
 });
 let socketIOdb = mongoose.connection.useDb('SocketIO');
 
-module.exports = socketIOdb.model("Dashboard_update", SocketIOdbSchema, "Dashboard_update");
+module.exports = socketIOdb.model("BidBoardChange", SocketIOdbSchema, "BidBoardChange");

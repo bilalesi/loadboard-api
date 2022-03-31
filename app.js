@@ -53,27 +53,33 @@ const reportData = require('./service/report');
 io.on("connection", (socket) => {
   console.log('New client connected');
 
-  socket.on('subscribeFeed',(data)=>{
+  const tableupdateFunc = (data) => {
+    //debugger;
+    reportData.update(data[0],socket,io).then( (result) => {
+      socket.emit("table-update", result);
+      console.log('updated table data',result);
+    });
+  };
+
+  const subFeedFunc = (data) => {
     console.log('user subscribed to table: ' + data.report);
     socket.join(data.report);
     console.log(data);
 
-    socket.on('table-update',async (p)=>{
-      reportData.update(data,socket,io).then( (result) => {
-        socket.emit("table-update", result);
-        console.log('updated table data',result);
-      });
-    });
+    //debugger;
+    socket.on('table-update',tableupdateFunc);
 
-    reportData.init(data,socket,io).then( (result) => {
+    return reportData.init(data,socket,io).then( (result) => {
       socket.emit("initialize", result);
       console.log('sent table data');
       //debugger;
     });
     
-  });
+  };
+
+  socket.on('subscribeFeed',subFeedFunc);
   socket.on('unsubscribeFeed',(data)=>{
-    console.log('user unsubscribed to table: ' + data.report);
+    console.log('user unsubscribed to table: ' + data.report,socket.off('table-update',tableupdateFunc));
   });
   
   socket.on("disconnect", () => {

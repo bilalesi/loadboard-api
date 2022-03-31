@@ -129,11 +129,11 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
     // sorting
     // have to switch query if the request sort is # of stops
     if (parameters.sort !== undefined) {
+        //debugger;
         var sortQueryArr = parameters.sort.split(';');
 
         sortQueryArr.forEach(sortQ => {
             var Query = sortQ.split(',');
-            
             var sortName = Query[0];
             var sortOrder = Query[1];
             var sortOperand = '';
@@ -168,7 +168,7 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
                 break;
                 //not sorting correctly
                 case 'pickupdate':
-                    sort["data.bidData.Plan.PlannedDate.Begin"] = sortOperand;
+                    sort["data.bidData.Plan[0].PlannedDate.Begin"] = sortOperand;
                 break;
                 case 'stops':
                     addFields['stopsLength'] = {
@@ -184,10 +184,17 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
                     sort['itemcount'] = sortOperand;
                     switchQuery = true;
                 break;
+                case 'itemweight':
+                    //not working right.
+                    addFields['itemweight'] = {
+                        '$sum': "$data.bidData.Items.Weight"
+                    }
+                    sort["itemweight"] = sortOperand;
                 default:
                     errors.push({ message: "Sort query is malformed, please use values like bidboard,asc or stops,-1." });
                 break;
             }
+            console.log('addFields,sort',addFields,sort);
         });
     }
     //debugger;
@@ -204,39 +211,6 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
 module.exports = {
     init: async (parameters,socket,io) => {
         socket.data.table = socket.data.table != undefined ? socket.data.table : [];
-        /*async function monitorStream(loadboardFunc){
-            //
-            //  need to stop this from duplicating and instead just start one when the first subscription starts
-            //
-            const changeStream = Loadboard.watch(pipeline);
-
-            const monitor = async next => {
-                console.log("Change happened: ", next);
-                switch(next.operationType) {
-                    case 'insert':
-                        console.log('an insert happened...', "uni_ID: ", next.fullDocument);
-                        Loadboard.find(query, {}).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
-                        break;
-                    case 'update':
-                        console.log('an update happened...');
-                        Loadboard.find(query, {}).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
-                        break;
-                    case 'delete':
-                        console.log('a delete happened...');
-                        Loadboard.find(query, {}).limit(limit).sort(sort).then( loadboardFunc ).then( () => io.to(parameters.report).emit("update", response) );
-                        break;
-                    default:
-                        break;
-                }
-                response.query = { query, 'sort': sort };
-                response.limit = limit;
-                //debugger;
-                
-                return response;
-            };
-        
-            changeStream.on("change",monitor); 
-        }*/
         try{
             var response = {};
             var errors = [];
