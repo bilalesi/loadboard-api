@@ -6,6 +6,8 @@ const loadboard = ({documents, response}) => {
             const tableDocument = documents.map( (doc, index) => {
                 //columns
                 var rows = [];
+                //console.log('response.reports',response.reports[0]);
+                //debugger;
                 response.reports[0].table.col.forEach(a => {
                     //console.log(a);
                     var accessor = a.accessor;

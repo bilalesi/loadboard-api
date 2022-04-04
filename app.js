@@ -54,8 +54,9 @@ io.on("connection", (socket) => {
   console.log('New client connected');
 
   const tableupdateFunc = (data) => {
+    //console.log('data',data);
     //debugger;
-    reportData.update(data[0],socket,io).then( (result) => {
+    reportData.update({parameters:data,socket:socket,io:io}).then( (result) => {
       socket.emit("table-update", result);
       console.log('updated table data',result);
     });
@@ -66,13 +67,11 @@ io.on("connection", (socket) => {
     socket.join(data.report);
     console.log(data);
 
-    //debugger;
     socket.on('table-update',tableupdateFunc);
 
-    return reportData.init(data,socket,io).then( (result) => {
+    return reportData.init({parameters:data,socket:socket,io:io}).then( (result) => {
       socket.emit("initialize", result);
       console.log('sent table data');
-      //debugger;
     });
     
   };
@@ -86,8 +85,6 @@ io.on("connection", (socket) => {
     console.log("Client disconnected");
   });
 });
-
-//module.exports = server;
 
 //display response based on path
 app.get('/', (req, res) => {

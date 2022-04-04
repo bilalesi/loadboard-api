@@ -9,9 +9,10 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
     var query = {},
         sort = {};
     //debugger;
-    if ( parameters.report !== undefined && parameters.report !== "null" && errors.length == 0 )
+    if ( parameters.table || parameters.report !== undefined && parameters.report !== "null" && errors.length == 0 )
     {
-        const report = parameters.report;
+        const report = parameters.table != undefined ? parameters.table.name : parameters.report;
+        console.log( 'current report', report );
 
         if (report == null||report == "") {
             errors.push({ message: "Report query *requires* a string." });
@@ -40,9 +41,6 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
             });
         }).then(function success(reportdta) {
                 response.reports = [reportdta];
-                nconf.use('currentTable', { currentTable:{
-                    tableConfig: [reportdta]
-                }, type: 'literal'});
             }, function error(err) {
                 errors.push({ message: err });
         }).catch(function(err) { console.log(err); });
@@ -209,7 +207,7 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
 }
 
 module.exports = {
-    init: async (parameters,socket,io) => {
+    init: async ({parameters,socket,io}) => {
         socket.data.table = socket.data.table != undefined ? socket.data.table : [];
         try{
             var response = {};
@@ -237,21 +235,9 @@ module.exports = {
 
             // Handle standard errors
             if (errors.length == 0) {
-                //
-                //debugger;
-                socket.data.table.push( { currentTable:{
-                    query: query,
-                    limit: limit,
-                    sort: sort,
-                    parameters: parameters,
-                    switchQuery: switchQuery,
-                    reports: response.reports
-                }});
 
                 if ( !switchQuery ){
                     //debugger;
-                    console.log(nconf.get());
-
                     const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( (documents)=> {converter.loadboard({documents,response}).then((r) =>{response = r;})} );
 
                     response.query = { query, 'sort': sort };
@@ -295,9 +281,10 @@ module.exports = {
         }
 
     },
-    update: async (parameters,socket,io) => {
+    update: async ({parameters,socket,io}) => {
         //socket.data.table = socket.data.table != undefined ? socket.data.table : [];
         try{
+            console.log('parameters',parameters);
             var response = {};
             var errors = [];
             var addFields = {};
@@ -309,6 +296,9 @@ module.exports = {
             response = t.response,
             addFields = t.addFields,
             switchQuery = t.switchQuery;
+            
+            //
+            console.log('response',response);
 
             var limit = 80;
             if ( parameters.limit !== undefined && parseInt(parameters.limit).toString() !== "NaN" )
@@ -324,7 +314,7 @@ module.exports = {
 
                 if ( !switchQuery ){
                     //debugger;
-                    console.log(nconf.get());
+                    //console.log(nconf.get());
 
                     const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( (documents)=> {converter.loadboard({documents,response}).then((r) =>{response = r;})} );
 
