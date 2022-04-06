@@ -20,13 +20,6 @@ const monitorStream = require('./service/monitor');
 
 //const io = new Server(server, { cors: { origin: "http://localhost:3000" } });
 app.use(cors());
-nconf.set('currentTable', {
-  query:{},
-  report:{},
-  limit: 25,
-  sort: {},
-  switchQuery: false
-});
 
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 app.use(bodyParser.json({ limit: "10mb" }));
@@ -51,7 +44,7 @@ const reportData = require('./service/report');
 
 
 io.on("connection", (socket) => {
-  console.log('New client connected');
+  console.log('--New client connected--');
 
   const tableupdateFunc = (data) => {
     //console.log('data',data);
@@ -63,7 +56,7 @@ io.on("connection", (socket) => {
   };
 
   const subFeedFunc = (data) => {
-    console.log('user subscribed to table: ' + data.report);
+    console.log('-user subscribed to table: ' + data.report + '-');
     socket.join(data.report);
     console.log(data);
 
@@ -78,7 +71,7 @@ io.on("connection", (socket) => {
 
   socket.on('subscribeFeed',subFeedFunc);
   socket.on('unsubscribeFeed',(data)=>{
-    console.log('user unsubscribed to table: ' + data.report,socket.off('table-update',tableupdateFunc));
+    console.log('user unsubscribed to table: ' + data.report);
   });
   
   socket.on("disconnect", () => {

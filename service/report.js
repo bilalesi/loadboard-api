@@ -208,7 +208,6 @@ async function formatRequest(parameters,errors,response,addFields, switchQuery){
 
 module.exports = {
     init: async ({parameters,socket,io}) => {
-        socket.data.table = socket.data.table != undefined ? socket.data.table : [];
         try{
             var response = {};
             var errors = [];
@@ -314,7 +313,6 @@ module.exports = {
 
                 if ( !switchQuery ){
                     //debugger;
-                    //console.log(nconf.get());
 
                     const loads = await Loadboard.find(query, { /*_id: 0*/ }).limit(limit).sort(sort).then( (documents)=> {converter.loadboard({documents,response}).then((r) =>{response = r;})} );
 
