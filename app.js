@@ -64,7 +64,7 @@ io.on("connection", (socket) => {
 
     return reportData.init({parameters:data,socket:socket,io:io}).then( (result) => {
       socket.emit("initialize", result);
-      console.log('sent table data');
+      console.log('sent table data', result);
     });
     
   };

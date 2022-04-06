@@ -30,7 +30,7 @@ async function monitorStream(io){
     };
     const BidBoardChange_monitor = async next => {
         console.log("Bid Board Change happened: ", next);
-        return await io.to('bidBoardChange').emit('bidBoardChange-request-update', {next});
+        return await io.to('Bid Board Active Loads').emit('bidBoardChange-request-update', {next});
     };
 
     changeStreams.dashboardChangeStream.on("change",dashboardTable_monitor);
