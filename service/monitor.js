@@ -26,11 +26,11 @@ async function monitorStream(io){
 
     const dashboardTable_monitor = async next => {
         console.log("Change happened: ", next);
-        return await io.to('Dashboard').emit('table-request-update', {next});
+        return io.to('Dashboard').emit('table-request-update', {next});
     };
     const BidBoardChange_monitor = async next => {
         console.log("Bid Board Change happened: ", next);
-        return await io.to('Bid Board Active Loads').emit('bidBoardChange-request-update', {next});
+        return io.to('Bid Board Active Loads').emit('bidBoardChange-request-update', {next});
     };
 
     changeStreams.dashboardChangeStream.on("change",dashboardTable_monitor);
