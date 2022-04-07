@@ -1,11 +1,16 @@
+require('dotenv').config();
 const cors = require("cors");
 const path = require("path");
 const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
+const passport = require('passport');
 const nconf = require('nconf');
-require('dotenv').config();
+const passportSetup = require("./service/passport-setup");
+const cookieSession = require("cookie-session");
+const cookieParser = require("cookie-parser"); // parse cookie header
+
 nconf.env().argv();
 
 const apiLoadboardController=require('./routes/loadboard');
@@ -19,8 +24,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 const monitorStream = require('./service/monitor');
 
 //const io = new Server(server, { cors: { origin: "http://localhost:3000" } });
-app.use(cors());
-
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 app.use(bodyParser.json({ limit: "10mb" }));
 var creds = { username: nconf.get('MONGO_USERNAME'), password: nconf.get('MONGO_PASSWORD') }
@@ -35,7 +38,63 @@ var db = mongoose.connect("mongodb+srv://" + creds.username + ":" + creds.passwo
 //route based on path
 app.use(express.static(path.join(__dirname,'public')));
 app.use("/api/loadboard", apiLoadboardController);
-app.use("/",apiLoadboardController);
+app.use("/", apiLoadboardController);
+app.use(
+  cookieSession({
+    name: "session",
+    keys: [process.env.COOKIE_KEY],
+    maxAge: 24 * 60 * 60 * 100
+  })
+);
+
+// parse cookies
+app.use(cookieParser());// initalize passport
+app.use(passport.initialize());
+// deserialize cookie from the browser
+app.use(passport.session());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // allow to server to accept request from different origin
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true // allow session cookie from browser to pass through
+  })
+);
+
+
+app.get('/auth/microsoft', passport.authenticate('microsoft'));
+app.get('/auth/microsoft/callback',
+      passport.authenticate('microsoft', {
+        successRedirect: `${process.env.FRONTEND_URL}/`,
+        failureRedirect: `${process.env.FRONTEND_URL}/login`
+      })
+);
+app.get("/auth/logout", (req, res) => {
+  console.log('---> logout')
+  req.logout();
+  res.redirect(process.env.FRONTEND_URL);
+});
+const authCheck = (req, res, next) => {
+  if (!req.user) {
+    res.status(401).json({
+      authenticated: false,
+      message: "user has not been authenticated"
+    });
+  } else {
+    next();
+  }
+};
+
+// if it's already login, send the profile response,
+// otherwise, send a 401 response that the user is not authenticated
+// authCheck before navigating to home page
+app.get("/auth/check", authCheck, (req, res) => {
+  res.status(200).json({
+    authenticated: true,
+    message: "user successfully authenticated",
+    user: req.user,
+    cookies: req.cookies
+  });
+});
 
 const port = parseInt(process.env.PORT) || 3000;
 server.listen(port, () => console.log(`Server running on port ${port}`));
