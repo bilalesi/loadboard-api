@@ -1,4 +1,5 @@
 require('dotenv').config();
+require("./service/passport-setup");
 const cors = require("cors");
 const path = require("path");
 const express = require("express");
@@ -7,13 +8,13 @@ const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 const passport = require('passport');
 const nconf = require('nconf');
-const passportSetup = require("./service/passport-setup");
 const cookieSession = require("cookie-session");
 const cookieParser = require("cookie-parser"); // parse cookie header
 
 nconf.env().argv();
 
-const apiLoadboardController=require('./routes/loadboard');
+const apiLoadboardController= require('./routes/loadboard');
+const authRouter = require('./routes/auth');
 //const userController=require('./controller/user')
 
 const bodyParser = require("body-parser");
@@ -37,8 +38,6 @@ var db = mongoose.connect("mongodb+srv://" + creds.username + ":" + creds.passwo
 
 //route based on path
 app.use(express.static(path.join(__dirname,'public')));
-app.use("/api/loadboard", apiLoadboardController);
-app.use("/", apiLoadboardController);
 app.use(
   cookieSession({
     name: "session",
@@ -60,41 +59,9 @@ app.use(
   })
 );
 
-
-app.get('/auth/microsoft', passport.authenticate('microsoft'));
-app.get('/auth/microsoft/callback',
-      passport.authenticate('microsoft', {
-        successRedirect: `${process.env.FRONTEND_URL}/`,
-        failureRedirect: `${process.env.FRONTEND_URL}/login`
-      })
-);
-app.get("/auth/logout", (req, res) => {
-  console.log('---> logout')
-  req.logout();
-  res.redirect(process.env.FRONTEND_URL);
-});
-const authCheck = (req, res, next) => {
-  if (!req.user) {
-    res.status(401).json({
-      authenticated: false,
-      message: "user has not been authenticated"
-    });
-  } else {
-    next();
-  }
-};
-
-// if it's already login, send the profile response,
-// otherwise, send a 401 response that the user is not authenticated
-// authCheck before navigating to home page
-app.get("/auth/check", authCheck, (req, res) => {
-  res.status(200).json({
-    authenticated: true,
-    message: "user successfully authenticated",
-    user: req.user,
-    cookies: req.cookies
-  });
-});
+app.use("/", apiLoadboardController);
+app.use("/api/loadboard", apiLoadboardController);
+app.use('/auth', authRouter);
 
 const port = parseInt(process.env.PORT) || 3000;
 server.listen(port, () => console.log(`Server running on port ${port}`));
