@@ -27,7 +27,7 @@ passport.use(
       },
       async function (accessToken, refreshToken, profile, done) {
         let user = await UserCollection.findOne({ "oauth.microsoft.id": profile.id });
-        console.log('prfile --> ', profile);
+        console.log('profile --> ', profile);
         if(!user){
               let newUser = new UserCollection({
                 firstName: profile.name.givenName,
