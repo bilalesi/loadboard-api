@@ -27,6 +27,7 @@ passport.use(
       },
       async function (accessToken, refreshToken, profile, done) {
         let user = await UserCollection.findOne({ "oauth.microsoft.id": profile.id });
+        console.log('prfile --> ', profile);
         if(!user){
               let newUser = new UserCollection({
                 firstName: profile.name.givenName,
@@ -48,7 +49,20 @@ passport.use(
                 return done(null, user);
               });
         } else {
-          return done(null, user);
+          let userUpdated = await UserCollection.findOneAndUpdate({ "oauth.microsoft.id": profile.id }, {
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+            email: profile.emails[0].value,
+            oauth: {
+              microsoft: {
+                id: profile.id,
+                userPrincipalName: profile._json.userPrincipalName,
+                displayName: profile.displayName,
+                phone: profile._json.mobilePhone,
+              },
+            },
+          }, { new: true });
+          return done(null, userUpdated);
         }
       }
     )
