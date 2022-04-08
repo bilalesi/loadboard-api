@@ -7,13 +7,13 @@ const router = express.Router();
 router.get('/microsoft', passport.authenticate('microsoft'));
 router.get('/microsoft/callback',
       passport.authenticate('microsoft', {
-        successRedirect: `${process.env.FRONTEND_DEV_URL}/`,
-        failureRedirect: `${process.env.FRONTEND_DEV_URL}/login`
+        successRedirect: `${process.env.FRONTEND_PROD_URL}/`,
+        failureRedirect: `${process.env.FRONTEND_PROD_URL}/login`
       })
 );
 router.get("/logout", (req, res) => {
   req.logout();
-  res.redirect(process.env.FRONTEND_DEV_URL);
+  res.redirect(process.env.FRONTEND_PROD_URL);
 });
 
 
