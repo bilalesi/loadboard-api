@@ -22,7 +22,7 @@ passport.use(
       {
         clientID: process.env.MICROSOFT_CLIENT_ID,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-        callbackURL: process.env.MICROSOFT_PROD_CALLBACK_URL,
+        callbackURL: "/auth/microsoft/callback",
         scope: ["user.read"],
       },
       async function (accessToken, refreshToken, profile, done) {
