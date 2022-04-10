@@ -51,9 +51,10 @@ app.use(cookieParser());// initalize passport
 app.use(passport.initialize());
 // deserialize cookie from the browser
 app.use(passport.session());
+const corsOrigin = process.env.TARGET_ENV === 'development' ? `${process.env.FRONTEND_DEV_URL}` : `${process.env.FRONTEND_PROD_URL}`;
 app.use(
   cors({
-    origin: process.env.FRONTEND_DEV_URL, // allow to server to accept request from different origin
+    origin: corsOrigin, // allow to server to accept request from different origin
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true // allow session cookie from browser to pass through
   })
