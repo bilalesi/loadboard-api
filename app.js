@@ -48,6 +48,8 @@ app.use(
     name: "loadboard-session",
     keys: [process.env.COOKIE_KEY],
     maxAge: 72 * 60 * 60 * 1000, // 72 hours
+    sameSite: 'none',
+    secure: true
     // sameSite: 'none',
     // secure: true
   })
