@@ -63,7 +63,7 @@ app.use(
 );
 
 const corsOptions = {
-  origin: ['http://localhost:3000'],
+  origin: [process.env.FRONTEND_DEV_URL, process.env.FRONTEND_PROD_URL],
   methods: 'GET,PUT,POST,DELETE', // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   // preflightContinue: false,
   optionsSuccessStatus: 200,
