@@ -45,18 +45,23 @@ app.use(cookieParser());
 app.set('trust proxy', 1)
 app.use(
   cookieSession({
-    name: "session",
+    name: "loadboard-session",
     keys: [process.env.COOKIE_KEY],
     maxAge: 72 * 60 * 60 * 1000, // 72 hours
-    sameSite: 'none',
-    secure: true
+    // sameSite: 'none',
+    // secure: true
   })
 );
-
+app.use(function(req, res, next) {
+  // res.setHeader('Access-Control-Allow-Credentials', true);
+  next();
+});
+const origin = [process.env.FRONTEND_DEV_URL, process.env.FRONTEND_PROD_URL];
+console.log("origin", origin);
 const corsOptions = {
-  origin: [process.env.FRONTEND_DEV_URL, process.env.FRONTEND_PROD_URL],
+  origin: origin,
   methods: 'GET,PUT,POST,DELETE',
-  optionsSuccessStatus: 200,
+  preflightContinue: true,
   credentials: true,
 };
 app.use( cors(corsOptions) );
