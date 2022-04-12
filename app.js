@@ -39,59 +39,40 @@ var db = mongoose.connect("mongodb+srv://" + creds.username + ":" + creds.passwo
   }
 );
 
-//route based on path
+
 app.use(express.static(path.join(__dirname,'public')));
-app.use(cookieParser());// initalize passport
+app.use(cookieParser());
 app.set('trust proxy', 1)
-// app.use(session({
-//   secret: 'keyboard cat',
-//   resave: false,
-//   saveUninitialized: true,
-//   cookie: { 
-//     secure: true,
-//     sameSite: 'none',
-//   }
-// }))
 app.use(
   cookieSession({
     name: "session",
     keys: [process.env.COOKIE_KEY],
-    maxAge: 24 * 60 * 60 * 100, // 24 hours
-    // sameSite: 'none',
-    // secure: true
+    maxAge: 72 * 60 * 60 * 1000, // 72 hours
+    sameSite: 'none',
+    secure: true
   })
 );
 
 const corsOptions = {
   origin: [process.env.FRONTEND_DEV_URL, process.env.FRONTEND_PROD_URL],
-  methods: 'GET,PUT,POST,DELETE', // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  // preflightContinue: false,
+  methods: 'GET,PUT,POST,DELETE',
   optionsSuccessStatus: 200,
   credentials: true,
 };
 app.use( cors(corsOptions) );
-// parse cookies
+
 
 app.use(passport.initialize());
-// deserialize cookie from the browser
 app.use(passport.session());
 
-// app.use( cors({
-//   "origin": [process.env.FRONTEND_PROD_URL, process.env.FRONTEND_DEV_URL],
-//   "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-//   "preflightContinue": false,
-//   "optionsSuccessStatus": 204
-// }) );
 app.use("/", apiLoadboardController);
 app.use("/api/loadboard", apiLoadboardController);
 app.use('/api/auth', authRouter);
-
-
 const reportData = require('./service/report');
 
 
 
-//display response based on path
+
 app.get('/', (req, res) => {
   res.send(`<h1>API Endpoints Explained</h1>
     <h3>Multiple Loads:</h3>
@@ -116,23 +97,7 @@ app.get('/', (req, res) => {
 const port = parseInt(process.env.PORT) || 3000;
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*:*' } });
-// let io = socketio(server, {
-//   path: '/socket.io',
-//   cors: corsOptions,
-//   // cors: {
-//   //   origin: "http://localhost:3000",
-//   //   methods: ["GET", "POST"],
-//   //   credentials: true
-//   // }
-// });
-//   server, {
-//   path: '/socket.io',
-//   cors: {
-//     origin: ['http://localhost:3000'],
-//     methods: ["GET", "POST"],
-//     credentials:   true
-//   }
-// });
+
 io.on("connection", (socket) => {
   console.log('--New client connected--');
 
@@ -156,14 +121,13 @@ io.on("connection", (socket) => {
       socket.emit("initialize", result);
       console.log('sent table data', result);
     });
-    
   };
 
   socket.on('subscribeFeed',subFeedFunc);
   socket.on('unsubscribeFeed',(data)=>{
     console.log('user unsubscribed to table: ' + data.report);
   });
-  
+
   socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
