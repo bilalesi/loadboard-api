@@ -6,6 +6,11 @@
   "scripts": {
     "start": "node ./app.js"
   },
+  "engines": {
+    "node": "14.19.0",
+    "yarn": "1.22.11",
+    "npm": "8.5.1"
+  },
   "author": "Adam Drumm",
   "license": "ISC",
   "dependencies": {
