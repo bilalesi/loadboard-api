@@ -1,34 +1,29 @@
 const passport = require("passport");
 const UserCollection = require("../models/UserModel");
 const MicrosoftStrategy = require("passport-microsoft").Strategy;
+const { MICROSOFT_CALLBACK_URL } = require('../constant');
 
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
+passport.serializeUser((user, done) => done(null, user.id));
 
 // deserialize the cookieUserId to user in the database
 passport.deserializeUser((id, done) => {
-  console.log("deserializeUser -->", id);
   UserCollection.findById(id)
-    .then((user) => {
-      done(null, user);
-    })
-    .catch((e) => {
-      done(new Error("Failed to deserialize an user"));
-    });
+    .then((user) => done(null, user))
+    .catch((e) => done(new Error("Failed to deserialize an user")));
 });
 passport.use(
     new MicrosoftStrategy(
       {
         clientID: process.env.MICROSOFT_CLIENT_ID,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-        callbackURL: process.env.TARGET_ENV === 'development' ? `${process.env.BACKEND_DEV_URL}/auth/microsoft/callback` : `${process.env.BACKEND_PROD_URL}/auth/microsoft/callback`,
+        callbackURL: MICROSOFT_CALLBACK_URL,
         scope: ["user.read"],
       },
       async function (accessToken, refreshToken, profile, done) {
         let user = await UserCollection.findOne({ "oauth.microsoft.id": profile.id });
         console.log('profile --> ', profile);
         if(!user){
+          console.log('user not found');
               let newUser = new UserCollection({
                 firstName: profile.name.givenName,
                 lastName: profile.name.familyName,
@@ -62,6 +57,7 @@ passport.use(
               },
             },
           }, { new: true });
+          console.log('user found', userUpdated);
           return done(null, userUpdated);
         }
       }

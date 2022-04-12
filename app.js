@@ -5,26 +5,29 @@ const path = require("path");
 const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");
-const { Server } = require("socket.io");
+
 const passport = require('passport');
 const nconf = require('nconf');
 const cookieSession = require("cookie-session");
+// const session = require('express-session')
 const cookieParser = require("cookie-parser"); // parse cookie header
-
+const bodyParser = require("body-parser");
+const { Server} = require("socket.io");
 nconf.env().argv();
 
 const apiLoadboardController= require('./routes/loadboard');
 const authRouter = require('./routes/auth');
+const { FRONT_URL } = require('./constant');
 //const userController=require('./controller/user')
 
-const bodyParser = require("body-parser");
+
 
 const app = express();
-const server=http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+
+
+
 const monitorStream = require('./service/monitor');
 
-//const io = new Server(server, { cors: { origin: "http://localhost:3000" } });
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 app.use(bodyParser.json({ limit: "10mb" }));
 var creds = { username: nconf.get('MONGO_USERNAME'), password: nconf.get('MONGO_PASSWORD') }
@@ -38,38 +41,98 @@ var db = mongoose.connect("mongodb+srv://" + creds.username + ":" + creds.passwo
 
 //route based on path
 app.use(express.static(path.join(__dirname,'public')));
+app.use(cookieParser());// initalize passport
+app.set('trust proxy', 1)
+// app.use(session({
+//   secret: 'keyboard cat',
+//   resave: false,
+//   saveUninitialized: true,
+//   cookie: { 
+//     secure: true,
+//     sameSite: 'none',
+//   }
+// }))
 app.use(
   cookieSession({
     name: "session",
     keys: [process.env.COOKIE_KEY],
-    maxAge: 24 * 60 * 60 * 100
+    maxAge: 24 * 60 * 60 * 100, // 24 hours
+    // sameSite: 'none',
+    // secure: true
   })
 );
 
+const corsOptions = {
+  origin: ['http://localhost:3000'],
+  methods: 'GET,PUT,POST,DELETE', // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  // preflightContinue: false,
+  optionsSuccessStatus: 200,
+  credentials: true,
+};
+app.use( cors(corsOptions) );
 // parse cookies
-app.use(cookieParser());// initalize passport
+
 app.use(passport.initialize());
 // deserialize cookie from the browser
 app.use(passport.session());
-const corsOrigin = process.env.TARGET_ENV === 'development' ? `${process.env.FRONTEND_DEV_URL}` : `${process.env.FRONTEND_PROD_URL}`;
-app.use(
-  cors({
-    origin: corsOrigin, // allow to server to accept request from different origin
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true // allow session cookie from browser to pass through
-  })
-);
 
+// app.use( cors({
+//   "origin": [process.env.FRONTEND_PROD_URL, process.env.FRONTEND_DEV_URL],
+//   "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+//   "preflightContinue": false,
+//   "optionsSuccessStatus": 204
+// }) );
 app.use("/", apiLoadboardController);
 app.use("/api/loadboard", apiLoadboardController);
-app.use('/auth', authRouter);
+app.use('/api/auth', authRouter);
 
-const port = parseInt(process.env.PORT) || 3000;
-server.listen(port, () => console.log(`Server running on port ${port}`));
 
 const reportData = require('./service/report');
 
 
+
+//display response based on path
+app.get('/', (req, res) => {
+  res.send(`<h1>API Endpoints Explained</h1>
+    <h3>Multiple Loads:</h3>
+    <ul>
+      <li>/getloads?stops=<span style="color:green">Operand</span> <span style="color:blue">integer</span></li>
+      <ul>
+        <li><span style="color:green;font-weight:bold;">Operand Greater than (>)</span> or <span style="color:green;font-weight:bold;">Less than (<)</span> is available as the first character for filtering this content.</li>
+        <li><span style="font-style:italic;">If no operand is used it does an equals search.</span></li>
+        <li><h4>Sorting</h4></li>
+        <ul>  
+          <li><span style="">&sort=id,asc;bidboard,desc;created,desc</span></li>
+        </ul>
+      </ul>
+    </ul>
+    <h3>Single Load:</h3>
+    <ul>
+      <li>/getLoad?oid=<span style="color:blue">integer</span></li>
+      <li><span style="font-weight:bold;">OR</span></li>
+      <li>/getLoad?_id=<span style="color:blue">integer</span></li>
+    </ul>`)
+});
+const port = parseInt(process.env.PORT) || 3000;
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*:*' } });
+// let io = socketio(server, {
+//   path: '/socket.io',
+//   cors: corsOptions,
+//   // cors: {
+//   //   origin: "http://localhost:3000",
+//   //   methods: ["GET", "POST"],
+//   //   credentials: true
+//   // }
+// });
+//   server, {
+//   path: '/socket.io',
+//   cors: {
+//     origin: ['http://localhost:3000'],
+//     methods: ["GET", "POST"],
+//     credentials:   true
+//   }
+// });
 io.on("connection", (socket) => {
   console.log('--New client connected--');
 
@@ -106,28 +169,8 @@ io.on("connection", (socket) => {
   });
 });
 
-//display response based on path
-app.get('/', (req, res) => {
-  res.send(`<h1>API Endpoints Explained</h1>
-    <h3>Multiple Loads:</h3>
-    <ul>
-      <li>/getloads?stops=<span style="color:green">Operand</span> <span style="color:blue">integer</span></li>
-      <ul>
-        <li><span style="color:green;font-weight:bold;">Operand Greater than (>)</span> or <span style="color:green;font-weight:bold;">Less than (<)</span> is available as the first character for filtering this content.</li>
-        <li><span style="font-style:italic;">If no operand is used it does an equals search.</span></li>
-        <li><h4>Sorting</h4></li>
-        <ul>  
-          <li><span style="">&sort=id,asc;bidboard,desc;created,desc</span></li>
-        </ul>
-      </ul>
-    </ul>
-    <h3>Single Load:</h3>
-    <ul>
-      <li>/getLoad?oid=<span style="color:blue">integer</span></li>
-      <li><span style="font-weight:bold;">OR</span></li>
-      <li>/getLoad?_id=<span style="color:blue">integer</span></li>
-    </ul>`)
-});
+
+server.listen(port, () => console.log(`Server running on port ${port}`));
 
 module.exports  = {
   io: io,

@@ -1,21 +1,20 @@
 const express = require("express");
 const passport = require("passport");
 
-
+const { FRONT_URL } = require('../constant')
 const router = express.Router();
 
-const authenticateRedirects = process.env.TARGET_ENV === 'development' ? `${process.env.FRONTEND_DEV_URL}` : `${process.env.FRONTEND_PROD_URL}`;
-
+console.log("---> FRONT_URL", FRONT_URL)
 router.get('/microsoft', passport.authenticate('microsoft'));
 router.get('/microsoft/callback',
       passport.authenticate('microsoft', {
-        successRedirect: `${authenticateRedirects}/`,
-        failureRedirect: `${authenticateRedirects}/login`
+        successRedirect: `${FRONT_URL}/`,
+        failureRedirect: `${FRONT_URL}/login`
       })
 );
 router.get("/logout", (req, res) => {
   req.logout();
-  res.redirect(process.env.FRONTEND_PROD_URL);
+  res.redirect(FRONT_URL);
 });
 
 

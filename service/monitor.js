@@ -35,6 +35,5 @@ async function monitorStream(io){
 
     changeStreams.dashboardChangeStream.on("change",dashboardTable_monitor);
     changeStreams.BidBoardChangeStream.on("change",BidBoardChange_monitor);
-    console.log('watching for changes',changeStreams);
 }
 module.exports = { monitor: monitorStream };
